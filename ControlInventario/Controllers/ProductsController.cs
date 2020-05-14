@@ -10,6 +10,7 @@ using ControlInventario.Models;
 
 namespace ControlInventario.Controllers
 {
+    [Authorize]
     public class ProductsController : Controller
     {
         private ApplicationDbContext db = new ApplicationDbContext();
@@ -17,7 +18,8 @@ namespace ControlInventario.Controllers
         // GET: Products
         public ActionResult Index()
         {
-            return View(db.Products.ToList());
+            var products = db.Products.Include(p => p.Supplier);
+            return View(products.ToList());
         }
 
         // GET: Products/Details/5
@@ -38,6 +40,7 @@ namespace ControlInventario.Controllers
         // GET: Products/Create
         public ActionResult Create()
         {
+            ViewBag.SupplierId = new SelectList(db.Suppliers, "Id", "SupplierName");
             return View();
         }
 
@@ -46,7 +49,7 @@ namespace ControlInventario.Controllers
         // más información vea https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create([Bind(Include = "Id,SupplierCod,SupplierName,Email,Phone,Address")] Product product)
+        public ActionResult Create([Bind(Include = "Id,ProductCode,ProductName,Description,Quantity,Price,SupplierId")] Product product)
         {
             if (ModelState.IsValid)
             {
@@ -55,6 +58,7 @@ namespace ControlInventario.Controllers
                 return RedirectToAction("Index");
             }
 
+            ViewBag.SupplierId = new SelectList(db.Suppliers, "Id", "SupplierName", product.SupplierId);
             return View(product);
         }
 
@@ -70,6 +74,7 @@ namespace ControlInventario.Controllers
             {
                 return HttpNotFound();
             }
+            ViewBag.SupplierId = new SelectList(db.Suppliers, "Id", "SupplierName", product.SupplierId);
             return View(product);
         }
 
@@ -78,7 +83,7 @@ namespace ControlInventario.Controllers
         // más información vea https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit([Bind(Include = "Id,SupplierCod,SupplierName,Email,Phone,Address")] Product product)
+        public ActionResult Edit([Bind(Include = "Id,ProductCode,ProductName,Description,Quantity,Price,SupplierId")] Product product)
         {
             if (ModelState.IsValid)
             {
@@ -86,6 +91,7 @@ namespace ControlInventario.Controllers
                 db.SaveChanges();
                 return RedirectToAction("Index");
             }
+            ViewBag.SupplierId = new SelectList(db.Suppliers, "Id", "SupplierName", product.SupplierId);
             return View(product);
         }
 
@@ -114,7 +120,11 @@ namespace ControlInventario.Controllers
             db.SaveChanges();
             return RedirectToAction("Index");
         }
-
+        public ActionResult ProductBySupplier(int SupplierId)
+        {
+            var products = db.Products.Where(p => p.SupplierId == SupplierId).ToList();
+            return View(products);
+        }
         protected override void Dispose(bool disposing)
         {
             if (disposing)
